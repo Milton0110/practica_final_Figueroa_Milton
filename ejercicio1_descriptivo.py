@@ -17,6 +17,8 @@ matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 import seaborn as sns
 
+from utils_proyecto import cargar_csv_con_year_numerico, guardar_figura
+
 SEED = 42
 DATA_DIR = Path("data")
 OUTPUT_DIR = Path("output")
@@ -27,19 +29,31 @@ sns.set_theme(style="whitegrid")
 
 
 def cargar_dataset() -> pd.DataFrame:
-    """Carga el dataset"""
-    dataset_path = DATA_DIR / DATASET_FILENAME
-    if not dataset_path.exists():
-        raise FileNotFoundError(f"No existe el dataset esperado: {dataset_path}")
+    """
+    Descripcion:
+    Carga el dataset principal desde disco y normaliza la columna `year`.
 
-    df = pd.read_csv(dataset_path)
-    if "year" in df.columns:
-        df["year"] = pd.to_numeric(df["year"], errors="coerce")
-    return df
+    Parametros:
+    Esta funcion no recibe parametros.
+
+    Retorna:
+    pd.DataFrame: Dataset cargado.
+    """
+    dataset_path = DATA_DIR / DATASET_FILENAME
+    return cargar_csv_con_year_numerico(dataset_path)
 
 
 def columnas_numericas_y_categoricas(df: pd.DataFrame) -> tuple[list[str], list[str]]:
-    """Devuelve la separacion de columnas numericas y categoricas."""
+    """
+    Descripcion:
+    Separa columnas numericas y categoricas del dataframe.
+
+    Parametros:
+    df (pd.DataFrame): Dataset de entrada.
+
+    Retorna:
+    tuple[list[str], list[str]]: (columnas_numericas, columnas_categoricas).
+    """
     numericas = df.select_dtypes(include=[np.number]).columns.tolist()
     categoricas = df.select_dtypes(exclude=[np.number]).columns.tolist()
     return numericas, categoricas
@@ -50,7 +64,18 @@ def guardar_resumen_estructural(
     numericas: list[str],
     categoricas: list[str],
 ) -> None:
-    """Guarda informacion estructural."""
+    """
+    Descripcion:
+    Genera y guarda un resumen estructural del dataset.
+
+    Parametros:
+    df (pd.DataFrame): Dataset de entrada.
+    numericas (list[str]): Lista de columnas numericas.
+    categoricas (list[str]): Lista de columnas categoricas.
+
+    Retorna:
+    None: Escribe el archivo `output/ej1_resumen_estructural.txt`.
+    """
     ruta = OUTPUT_DIR / "ej1_resumen_estructural.txt"
 
     memory_mb = df.memory_usage(deep=True).sum() / (1024 * 1024)
@@ -75,7 +100,17 @@ def guardar_resumen_estructural(
 
 
 def guardar_descriptivo(df: pd.DataFrame, numericas: list[str]) -> None:
-    """Genera descriptivo de variables numericas"""
+    """
+    Descripcion:
+    Calcula estadisticos descriptivos por variable numerica y los exporta.
+
+    Parametros:
+    df (pd.DataFrame): Dataset de entrada.
+    numericas (list[str]): Lista de columnas numericas.
+
+    Retorna:
+    None: Escribe el archivo `output/ej1_descriptivo.csv`.
+    """
     if not numericas:
         raise ValueError("No hay variables numericas para generar descriptivo")
 
@@ -111,7 +146,17 @@ def guardar_descriptivo(df: pd.DataFrame, numericas: list[str]) -> None:
 
 
 def graficar_histogramas(df: pd.DataFrame, numericas: list[str]) -> None:
-    """Genera histogramas de variables numericas"""
+    """
+    Descripcion:
+    Genera histogramas (con KDE) para las variables numericas.
+
+    Parametros:
+    df (pd.DataFrame): Dataset de entrada.
+    numericas (list[str]): Lista de columnas numericas.
+
+    Retorna:
+    None: Guarda `output/ej1_histogramas.png`.
+    """
     if not numericas:
         return
 
@@ -130,21 +175,40 @@ def graficar_histogramas(df: pd.DataFrame, numericas: list[str]) -> None:
 
     fig.suptitle("Histogramas de variables numericas", y=1.01)
     fig.tight_layout(pad=2.0)
-    fig.savefig(OUTPUT_DIR / "ej1_histogramas.png", dpi=150, bbox_inches="tight")
-    plt.close(fig)
+    guardar_figura(fig, OUTPUT_DIR / "ej1_histogramas.png")
 
 
 def _columnas_ventas_para_log(df: pd.DataFrame, numericas: list[str]) -> list[str]:
-    """Selecciona columnas de ventas para visualizaciones logaritmicas."""
+    """
+    Descripcion:
+    Selecciona columnas adecuadas para aplicar visualizaciones con log1p.
+
+    Parametros:
+    df (pd.DataFrame): Dataset de entrada.
+    numericas (list[str]): Lista de columnas numericas.
+
+    Retorna:
+    list[str]: Columnas candidatas para transformacion logaritmica.
+    """
     cols = [c for c in numericas if c.lower().endswith("_sales")]
     if cols:
         return cols
-    # Fallback: evitar variables con escala/semantica no comparable.
+    # Plan B: evitamos columnas que aquí no son comparables.
     return [c for c in numericas if c not in {"rank", "year"}]
 
 
 def graficar_histogramas_log1p(df: pd.DataFrame, numericas: list[str]) -> None:
-    """Genera ej1_histogramas_log1p.png con transformacion log1p."""
+    """
+    Descripcion:
+    Genera histogramas de variables seleccionadas tras aplicar log1p.
+
+    Parametros:
+    df (pd.DataFrame): Dataset de entrada.
+    numericas (list[str]): Lista de columnas numericas.
+
+    Retorna:
+    None: Guarda `output/ej1_histogramas_log1p.png`.
+    """
     cols = _columnas_ventas_para_log(df, numericas)
     if not cols:
         return
@@ -167,12 +231,21 @@ def graficar_histogramas_log1p(df: pd.DataFrame, numericas: list[str]) -> None:
 
     fig.suptitle("Histogramas con transformacion log1p", y=1.01)
     fig.tight_layout(pad=2.0)
-    fig.savefig(OUTPUT_DIR / "ej1_histogramas_log1p.png", dpi=150, bbox_inches="tight")
-    plt.close(fig)
+    guardar_figura(fig, OUTPUT_DIR / "ej1_histogramas_log1p.png")
 
 
 def graficar_histogramas_comparacion_log(df: pd.DataFrame, numericas: list[str]) -> None:
-    """Genera ej1_histogramas_comparacion_log.png (original vs log1p)."""
+    """
+    Descripcion:
+    Compara visualmente distribuciones originales frente a log1p.
+
+    Parametros:
+    df (pd.DataFrame): Dataset de entrada.
+    numericas (list[str]): Lista de columnas numericas.
+
+    Retorna:
+    None: Guarda `output/ej1_histogramas_comparacion_log.png`.
+    """
     cols = _columnas_ventas_para_log(df, numericas)
     if not cols:
         return
@@ -195,19 +268,38 @@ def graficar_histogramas_comparacion_log(df: pd.DataFrame, numericas: list[str])
 
     fig.suptitle("Comparacion de distribuciones: original vs log1p", y=1.002)
     fig.tight_layout(pad=1.8, h_pad=1.6, w_pad=1.1)
-    fig.savefig(OUTPUT_DIR / "ej1_histogramas_comparacion_log.png", dpi=150, bbox_inches="tight")
-    plt.close(fig)
+    guardar_figura(fig, OUTPUT_DIR / "ej1_histogramas_comparacion_log.png")
 
 
 def _top_categories(series: pd.Series, top_n: int = 12) -> pd.Series:
-    """Agrupa categorias raras en 'Otros' para mejorar legibilidad."""
+    """
+    Descripcion:
+    Conserva las categorias mas frecuentes y agrupa el resto en `Otros`.
+
+    Parametros:
+    series (pd.Series): Serie categorica original.
+    top_n (int): Numero de categorias mas frecuentes a conservar.
+
+    Retorna:
+    pd.Series: Serie transformada con categorias raras agrupadas.
+    """
     s = series.astype("string").fillna("<NA>")
     top = s.value_counts().head(top_n).index
     return s.where(s.isin(top), other="Otros")
 
 
 def graficar_boxplots_target_por_categorica(df: pd.DataFrame, categoricas: list[str]) -> None:
-    """Genera ej1_boxplots.png (target por variables categoricas)."""
+    """
+    Descripcion:
+    Genera boxplots del target para cada variable categorica candidata.
+
+    Parametros:
+    df (pd.DataFrame): Dataset de entrada.
+    categoricas (list[str]): Lista de columnas categoricas.
+
+    Retorna:
+    None: Guarda `output/ej1_boxplots.png`.
+    """
     if TARGET_COLUMN not in df.columns:
         return
 
@@ -216,8 +308,7 @@ def graficar_boxplots_target_por_categorica(df: pd.DataFrame, categoricas: list[
         fig, ax = plt.subplots(figsize=(8, 4))
         ax.text(0.5, 0.5, "No hay variables categoricas para boxplots", ha="center", va="center")
         ax.axis("off")
-        fig.savefig(OUTPUT_DIR / "ej1_boxplots.png", dpi=150, bbox_inches="tight")
-        plt.close(fig)
+        guardar_figura(fig, OUTPUT_DIR / "ej1_boxplots.png")
         return
 
     n = len(candidatas)
@@ -237,12 +328,21 @@ def graficar_boxplots_target_por_categorica(df: pd.DataFrame, categoricas: list[
         axes[j].axis("off")
 
     fig.tight_layout()
-    fig.savefig(OUTPUT_DIR / "ej1_boxplots.png", dpi=150, bbox_inches="tight")
-    plt.close(fig)
+    guardar_figura(fig, OUTPUT_DIR / "ej1_boxplots.png")
 
 
 def graficar_heatmap_correlacion(df: pd.DataFrame, numericas: list[str]) -> pd.Series:
-    """Genera ej1_heatmap_correlacion.png y devuelve correlaciones con target."""
+    """
+    Descripcion:
+    Genera el heatmap de correlaciones numericas y calcula correlacion con target.
+
+    Parametros:
+    df (pd.DataFrame): Dataset de entrada.
+    numericas (list[str]): Lista de columnas numericas.
+
+    Retorna:
+    pd.Series: Correlaciones de cada variable numerica con el target, ordenadas por magnitud.
+    """
     if len(numericas) < 2:
         return pd.Series(dtype=float)
 
@@ -252,8 +352,7 @@ def graficar_heatmap_correlacion(df: pd.DataFrame, numericas: list[str]) -> pd.S
     sns.heatmap(corr, cmap="RdBu_r", center=0, annot=True, fmt=".2f", ax=ax)
     ax.set_title("Matriz de correlacion de Pearson")
     fig.tight_layout()
-    fig.savefig(OUTPUT_DIR / "ej1_heatmap_correlacion.png", dpi=150, bbox_inches="tight")
-    plt.close(fig)
+    guardar_figura(fig, OUTPUT_DIR / "ej1_heatmap_correlacion.png")
 
     if TARGET_COLUMN in corr.columns:
         return corr[TARGET_COLUMN].drop(index=TARGET_COLUMN).sort_values(key=np.abs, ascending=False)
@@ -261,13 +360,22 @@ def graficar_heatmap_correlacion(df: pd.DataFrame, numericas: list[str]) -> pd.S
 
 
 def graficar_categoricas(df: pd.DataFrame, categoricas: list[str]) -> None:
-    """Genera ej1_categoricas.png con frecuencias de variables categoricas."""
+    """
+    Descripcion:
+    Genera graficos de frecuencias para variables categoricas.
+
+    Parametros:
+    df (pd.DataFrame): Dataset de entrada.
+    categoricas (list[str]): Lista de columnas categoricas.
+
+    Retorna:
+    None: Guarda `output/ej1_categoricas.png`.
+    """
     if not categoricas:
         fig, ax = plt.subplots(figsize=(8, 4))
         ax.text(0.5, 0.5, "No hay variables categoricas", ha="center", va="center")
         ax.axis("off")
-        fig.savefig(OUTPUT_DIR / "ej1_categoricas.png", dpi=150, bbox_inches="tight")
-        plt.close(fig)
+        guardar_figura(fig, OUTPUT_DIR / "ej1_categoricas.png")
         return
 
     cols_plot = [c for c in categoricas if c != "name"] or categoricas[:1]
@@ -276,7 +384,7 @@ def graficar_categoricas(df: pd.DataFrame, categoricas: list[str]) -> None:
     ordered = [c for c in preferred_order if c in cols_plot] + [c for c in cols_plot if c not in preferred_order]
     cols_plot = ordered
 
-    # Caso principal del dataset actual:
+    # En este dataset queda más claro así:
     # - platform y genre arriba
     # - publisher abajo ocupando doble ancho
     if all(c in cols_plot for c in ["platform", "genre", "publisher"]):
@@ -313,7 +421,7 @@ def graficar_categoricas(df: pd.DataFrame, categoricas: list[str]) -> None:
                 ax.set_ylabel("conteo")
                 ax.tick_params(axis="x", rotation=35)
     else:
-        # Fallback generico para cualquier otro dataset
+        # Si cambia el dataset, usamos este armado más genérico.
         n = len(cols_plot)
         cols = 2
         rows = math.ceil(n / cols)
@@ -323,7 +431,7 @@ def graficar_categoricas(df: pd.DataFrame, categoricas: list[str]) -> None:
         for i, col in enumerate(cols_plot):
             top_n = 30 if col == "publisher" else 15
             if col == "publisher":
-                # Top puro sin agrupar categorias restantes en "Otros"
+                # Mostramos top puro, sin meter el resto en "Otros".
                 freq = (
                     df[col]
                     .astype("string")
@@ -349,20 +457,25 @@ def graficar_categoricas(df: pd.DataFrame, categoricas: list[str]) -> None:
             axes[j].axis("off")
 
     fig.tight_layout(pad=1.4, h_pad=2.0, w_pad=1.4)
-    fig.savefig(OUTPUT_DIR / "ej1_categoricas.png", dpi=150, bbox_inches="tight")
-    plt.close(fig)
+    guardar_figura(fig, OUTPUT_DIR / "ej1_categoricas.png")
 
 
 def guardar_outliers_y_multicolinealidad(df: pd.DataFrame, numericas: list[str]) -> pd.DataFrame:
-    """Detecta outliers (IQR), aplica tratamiento y analiza multicolinealidad.
+    """
+    Descripcion:
+    Detecta outliers con IQR, aplica capado cuando corresponde y analiza multicolinealidad.
 
-    Metodo elegido: IQR (robusto ante distribuciones asimetricas y colas largas).
-    Tratamiento elegido: capado/winsorizacion a [Q1-1.5*IQR, Q3+1.5*IQR].
+    Parametros:
+    df (pd.DataFrame): Dataset de entrada.
+    numericas (list[str]): Lista de columnas numericas.
+
+    Retorna:
+    pd.DataFrame: Copia del dataset con capado IQR aplicado en columnas tratables.
     """
     ruta = OUTPUT_DIR / "ej1_outliers.txt"
     ruta_dataset_tratado = OUTPUT_DIR / "ej1_datos_tratados_iqr.csv"
 
-    # Copia para tratamiento sin alterar el dataset original
+    # Trabajamos sobre copia para no tocar el original.
     df_tratado = df.copy()
 
     corr = df[numericas].corr(numeric_only=True) if numericas else pd.DataFrame()
@@ -374,8 +487,7 @@ def guardar_outliers_y_multicolinealidad(df: pd.DataFrame, numericas: list[str])
                 if abs(r) > 0.9:
                     pares_altos.append((c1, c2, r))
 
-    # En este dataset, rank es un identificador ordinal y year es temporal:
-    # se diagnostican, pero no se capan automaticamente.
+    # `rank` y `year` aquí se revisan, pero no se capan automáticamente.
     cols_solo_diagnostico = {"rank", "year"}
     total_capeados = 0
 
@@ -430,7 +542,16 @@ def guardar_outliers_y_multicolinealidad(df: pd.DataFrame, numericas: list[str])
 
 
 def guardar_top3_correlaciones(corr_target: pd.Series) -> None:
-    """Guarda las 3 variables con mayor correlacion absoluta con el target."""
+    """
+    Descripcion:
+    Guarda las 3 variables con mayor correlacion absoluta con el target.
+
+    Parametros:
+    corr_target (pd.Series): Correlaciones contra la variable objetivo.
+
+    Retorna:
+    None: Escribe el archivo `output/ej1_top3_correlaciones.txt`.
+    """
     ruta = OUTPUT_DIR / "ej1_top3_correlaciones.txt"
     top3 = corr_target.head(3)
 
@@ -445,7 +566,16 @@ def guardar_top3_correlaciones(corr_target: pd.Series) -> None:
 
 
 def main() -> None:
-    """Ejecuta el pipeline completo del ejercicio 1."""
+    """
+    Descripcion:
+    Ejecuta el pipeline completo del ejercicio 1 y genera todas las salidas.
+
+    Parametros:
+    Esta funcion no recibe parametros.
+
+    Retorna:
+    None: Ejecuta el flujo y guarda artefactos en `output/`.
+    """
     np.random.seed(SEED)
     OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
 

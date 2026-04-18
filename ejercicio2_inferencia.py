@@ -24,6 +24,8 @@ from sklearn.model_selection import train_test_split
 from sklearn.pipeline import Pipeline
 from sklearn.preprocessing import OneHotEncoder, StandardScaler
 
+from utils_proyecto import cargar_csv_con_year_numerico, guardar_figura
+
 SEED = 42
 DATA_DIR = Path("data")
 OUTPUT_DIR = Path("output")
@@ -37,19 +39,31 @@ sns.set_theme(style="whitegrid")
 
 
 def cargar_dataset() -> pd.DataFrame:
-    """Carga dataset desde data/video_games_sales.csv."""
-    dataset_path = DATA_DIR / DATASET_FILENAME
-    if not dataset_path.exists():
-        raise FileNotFoundError(f"No existe el dataset esperado: {dataset_path}")
+    """
+    Descripcion:
+    Carga el dataset desde disco y normaliza la columna `year`.
 
-    df = pd.read_csv(dataset_path)
-    if "year" in df.columns:
-        df["year"] = pd.to_numeric(df["year"], errors="coerce")
-    return df
+    Parametros:
+    Esta funcion no recibe parametros.
+
+    Retorna:
+    pd.DataFrame: Dataset cargado.
+    """
+    dataset_path = DATA_DIR / DATASET_FILENAME
+    return cargar_csv_con_year_numerico(dataset_path)
 
 
 def construir_preprocesador(df_x: pd.DataFrame) -> ColumnTransformer:
-    """Configura transformaciones para variables numericas y categoricas."""
+    """
+    Descripcion:
+    Construye el preprocesador para variables numericas y categoricas.
+
+    Parametros:
+    df_x (pd.DataFrame): Matriz de variables predictoras.
+
+    Retorna:
+    ColumnTransformer: Transformador compuesto listo para entrenamiento.
+    """
     num_cols = df_x.select_dtypes(include=[np.number]).columns.tolist()
     cat_cols = df_x.select_dtypes(exclude=[np.number]).columns.tolist()
 
@@ -84,7 +98,16 @@ def construir_preprocesador(df_x: pd.DataFrame) -> ColumnTransformer:
 
 
 def extraer_importancias_lineales(model: Pipeline) -> pd.DataFrame:
-    """Extrae magnitud de coeficientes para interpretar variables influyentes."""
+    """
+    Descripcion:
+    Extrae coeficientes del modelo lineal y calcula su magnitud absoluta.
+
+    Parametros:
+    model (Pipeline): Pipeline entrenado con pasos `preprocess` y `regressor`.
+
+    Retorna:
+    pd.DataFrame: Tabla ordenada por importancia absoluta de coeficientes.
+    """
     pre = model.named_steps["preprocess"]
     reg = model.named_steps["regressor"]
 
@@ -102,7 +125,16 @@ def extraer_importancias_lineales(model: Pipeline) -> pd.DataFrame:
 
 
 def entrenar_modelo(df: pd.DataFrame) -> dict[str, object]:
-    """Entrena Regresion Lineal y devuelve resultados y artefactos."""
+    """
+    Descripcion:
+    Entrena una regresion lineal con preprocesado y calcula metricas.
+
+    Parametros:
+    df (pd.DataFrame): Dataset de entrada con features y target.
+
+    Retorna:
+    dict[str, object]: Diccionario con modelo, metricas, particiones, predicciones y residuos.
+    """
     required = FEATURE_COLUMNS + [TARGET_COLUMN]
     faltantes = [c for c in required if c not in df.columns]
     if faltantes:
@@ -159,7 +191,16 @@ def entrenar_modelo(df: pd.DataFrame) -> dict[str, object]:
 
 
 def guardar_metricas(resultados: dict[str, object]) -> None:
-    """Guarda metricas en output/ej2_metricas_regresion.txt."""
+    """
+    Descripcion:
+    Guarda en texto las metricas de train y test del modelo.
+
+    Parametros:
+    resultados (dict[str, object]): Estructura de salida de `entrenar_modelo`.
+
+    Retorna:
+    None: Escribe `output/ej2_metricas_regresion.txt`.
+    """
     met = resultados["metrics"]
     ruta = OUTPUT_DIR / "ej2_metricas_regresion.txt"
 
@@ -180,7 +221,16 @@ def guardar_metricas(resultados: dict[str, object]) -> None:
 
 
 def guardar_residuos(resultados: dict[str, object]) -> None:
-    """Genera output/ej2_residuos.png."""
+    """
+    Descripcion:
+    Genera el grafico de residuos frente a valores predichos.
+
+    Parametros:
+    resultados (dict[str, object]): Estructura de salida de `entrenar_modelo`.
+
+    Retorna:
+    None: Guarda `output/ej2_residuos.png`.
+    """
     y_pred = resultados["pred_test"]
     resid = resultados["resid"]
 
@@ -191,19 +241,36 @@ def guardar_residuos(resultados: dict[str, object]) -> None:
     ax.set_ylabel("Residuo (y_real - y_pred)")
     ax.set_title("Grafico de residuos - Regresion lineal")
     fig.tight_layout()
-    fig.savefig(OUTPUT_DIR / "ej2_residuos.png", dpi=150, bbox_inches="tight")
-    plt.close(fig)
+    guardar_figura(fig, OUTPUT_DIR / "ej2_residuos.png")
 
 
 def guardar_importancias(resultados: dict[str, object]) -> None:
-    """Guarda ranking de coeficientes absolutos para analisis en Respuestas.md."""
+    """
+    Descripcion:
+    Exporta ranking de importancias lineales basado en coeficientes absolutos.
+
+    Parametros:
+    resultados (dict[str, object]): Estructura de salida de `entrenar_modelo`.
+
+    Retorna:
+    None: Escribe `output/ej2_importancia_coeficientes.csv`.
+    """
     model = resultados["model"]
     imp = extraer_importancias_lineales(model)
     imp.to_csv(OUTPUT_DIR / "ej2_importancia_coeficientes.csv", index=False, encoding="utf-8")
 
 
 def main() -> None:
-    """Pipeline completo del ejercicio 2."""
+    """
+    Descripcion:
+    Ejecuta el pipeline completo del ejercicio 2 y genera sus salidas.
+
+    Parametros:
+    Esta funcion no recibe parametros.
+
+    Retorna:
+    None: Entrena, evalua y guarda artefactos en `output/`.
+    """
     np.random.seed(SEED)
     OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
 

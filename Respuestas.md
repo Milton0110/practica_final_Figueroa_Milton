@@ -1,86 +1,200 @@
-﻿# Respuestas - Practica Final: Analisis y Modelado de Datos
+﻿# Respuestas — Práctica Final: Análisis y Modelado de Datos
+
+> Documento combinado entre la plantilla del ejercicio y mis respuestas.
 
 ---
 
-## Ejercicio 1 - Analisis Estadistico Descriptivo
+## Ejercicio 1 — Análisis Estadístico Descriptivo
 
-Descripcion y analisis:
-Se trabajo con el dataset `video_games_sales.csv` (16598 filas, 11 columnas). Se eligio `global_sales` como variable objetivo continua para regresion. El analisis descriptivo se guardo en `output/ej1_descriptivo.csv` y se generaron los graficos requeridos de histogramas, boxplots por categoria, heatmap y frecuencias categoricas.
+Descripción y análisis:
+Trabajé con `video_games_sales.csv` (16598 filas, 11 columnas).  
+La variable objetivo fue `global_sales` porque representa las ventas globales del juego y tiene sentido intentar estimarla con variables como año, plataforma y género.
 
-Para los histogramas hemos incluido 2 imagenes extra en la que aplico log1p para ver con un poquito mas de detalle la representación gráfica:
--ej1_histogramas_log1p.png: en el que se ven las graficas con el log1p aplicado.
--ej1_histogramas_comparacion_log.png: que es una comparativa de las graficas originales vs las graficas con el log1p aplicado.
+Además de los histogramas normales, añadí:
+- `ej1_histogramas_log1p.png`
+- `ej1_histogramas_comparacion_log.png`
 
-Para las categoricas (ej1_categoricas.png) decidí darle más tamaño a la gráfica de "frecuencia - publisher" y no mostrar otros para que se puedan representar mejor los datos, además la muestra tiene los ejes invertidos para que los labels no se solapen ni descoloquen y se pueda visualizar correctamente la gráfica.
+Esto lo hice para ver mejor la distribución, porque las ventas están muy concentradas en valores bajos y unos pocos juegos venden muchísimo.
 
-### Pregunta 1.1 - Fuente del dataset y variable objetivo
-El dataset utilizado es `video_games_sales.csv`, basado en el dataset publico de ventas historicas de videojuegos (conocido como `vgsales`, difundido en Kaggle y repositorios docentes).
-URL: https://www.kaggle.com/datasets/asaniczka/video-game-sales-2024
+---
 
-La variable objetivo elegida fue `global_sales` porque:
-1. Es numerica continua.
-2. Resume el rendimiento total comercial de cada videojuego.
-3. Tiene sentido economico/modelado intentar estimarla desde metadatos como `year`, `platform` y `genre`.
+**Pregunta 1.1** — ¿De qué fuente proviene el dataset y cuál es la variable objetivo (target)? ¿Por qué tiene sentido hacer regresión sobre ella?
 
-### Pregunta 1.2 - Distribucion y outliers
-La distribucion de las variables de ventas (`na_sales`, `eu_sales`, `jp_sales`, `other_sales`, `global_sales`) es fuertemente asimetrica a la derecha, con muchos titulos de ventas bajas y pocos superventas. Por esa razón y para ver un poco mejor los datos adjunto un reajuste hecho con log1p y la comparativa de graficas, se ve un poquito más claro.
+El dataset es `video_games_sales.csv` (dataset público tipo vgsales, difundido en Kaggle).  
+Referencia: https://www.kaggle.com/datasets/asaniczka/video-game-sales-2024
 
-En `global_sales`:
-- IQR = 0.41 (Q1 = 0.06, Q3 = 0.47)
-- Skewness = 17.4006
-- Kurtosis = 603.9323
-- Outliers (IQR): 1893 observaciones (11.40%)
+El target es `global_sales` porque:
+1. Es numérico continuo.
+2. Resume el resultado comercial total.
+3. Tiene lógica predecirlo con características del juego que suelen estar relacionadas con cuánto termina vendiendo. Datos como año de salida, plataforma, género o publisher.
 
-Tambien hay outliers altos en ventas regionales (entre 10% y 15% aprox. segun columna). Se decidio no eliminarlos de forma agresiva, porque representan casos reales de juegos superventas (informacion relevante del dominio).
+---
 
-### Pregunta 1.3 - Top 3 correlaciones con la variable objetivo
-Las tres variables con mayor correlacion absoluta con `global_sales` son:
+**Pregunta 1.2** — ¿Qué distribución tienen las principales variables numéricas y has encontrado outliers? Indica en qué variables y qué has decidido hacer con ellos.
+
+Las variables de ventas (`na_sales`, `eu_sales`, `jp_sales`, `other_sales`, `global_sales`) están muy sesgadas a la derecha: muchos juegos venden poco y unos pocos venden muchísimo.
+
+Sí hay outliers (sobre todo en variables de ventas).  
+Ejemplo en `global_sales`: alrededor de 11.40% por IQR.
+
+Decisión: no eliminarlos en bloque porque son casos reales importantes (superventas).  
+Apliqué IQR para detectar y capado (winsorización) en variables de ventas para tratamiento, sin borrar filas.
+
+---
+
+**Pregunta 1.3** — ¿Qué tres variables numéricas tienen mayor correlación (en valor absoluto) con la variable objetivo? Indica los coeficientes.
+
+Top 3:
 1. `na_sales`: 0.9410
 2. `eu_sales`: 0.9028
 3. `other_sales`: 0.7483
 
-Esto tiene sentido ya que JP es un país solo y no puede competir con los agrupados en "other"
+Tiene sentido porque son ventas por regiones y están muy relacionadas con las ventas globales.
 
-### Pregunta 1.4 - Valores nulos y tratamiento
-Nulos detectados:
+---
+
+**Pregunta 1.4** — ¿Hay valores nulos en el dataset? ¿Qué porcentaje representan y cómo los has tratado?
+
+Sí, pero pocos:
 - `year`: 1.63%
 - `publisher`: 0.35%
-- Resto: 0%
+- resto: 0%
 
-Tratamiento aplicado:
-Para la detección de outliers utilicé el método IQR porque es robusto ante distribuciones asimétricas y colas largas, características presentes en las variables de ventas. Definí límites por variable como Q1 - 1.5*IQR y Q3 + 1.5*IQR. Como tratamiento apliqué winsorización (capado) de los valores fuera de esos límites en las variables de ventas, evitando eliminar filas y conservando el tamaño muestral. En rank y year solo realicé diagnóstico por su naturaleza (identificador/temporal).
-
-1. En analisis descriptivo (Ejercicio 1), se mantuvieron para no distorsionar el retrato original del dataset.
-2. En modelado (Ejercicio 2), `year` se imputo con mediana dentro del pipeline.
-3. La columna `publisher` no se uso en el modelo final para evitar inestabilidad por alta cardinalidad.
+Tratamiento:
+1. En descriptivo los mantuve para no alterar la foto real del dataset.
+2. En modelado, `year` se imputa con mediana dentro del pipeline.
+3. `publisher` no se usó en el modelo final por alta cardinalidad e inestabilidad.
 
 ---
 
-## Ejercicio 2 - Inferencia con Scikit-Learn
+## Ejercicio 2 — Inferencia con Scikit-Learn
 
-Descripcion y analisis:
-Se implemento un pipeline de `LinearRegression` con preprocesado reproducible:
-1. Split 80/20 con `random_state=42`.
-2. Imputacion de numericas con mediana.
-3. Escalado de numericas (`StandardScaler`).
-4. One-hot encoding de categoricas (`drop='first'`, `handle_unknown='ignore'`).
+Descripción y análisis:
+Hice un pipeline de `LinearRegression` con:
+1. split 80/20 (`random_state=42`)
+2. imputación (mediana en numéricas)
+3. escalado (`StandardScaler`)
+4. one-hot en categóricas (`drop='first'`, `handle_unknown='ignore'`)
 
-Para evitar fuga de informacion, se uso como predictores solo: `year`, `platform`, `genre`.
+Para evitar fuga de información usé como features: `year`, `platform`, `genre`.
 
-### Pregunta 2.1 - MAE, RMSE, R2 y valoracion del modelo
-Metricas sobre test set:
+---
+
+**Pregunta 2.1** — Indica los valores de MAE, RMSE y R² de la regresión lineal sobre el test set. ¿El modelo funciona bien? ¿Por qué?
+
+Resultados en test:
 - MAE = 0.590574
 - RMSE = 2.032835
-- R2 = 0.016410
+- R² = 0.016410
 
-Valoracion:
-El modelo no es muy bueno para hacer predicciones (al descargarlo creía que eran ventas por año y no el año de salida del videojugo y sus ventas)
+Conclusión corta: no funciona muy bien para predecir.
 
-Al hacer el ejercicio se quedan valores que muestran underfitting porque tanto train como test tienen R2 bajos (0.0649 vs 0.0164), así que el modelo no captura bien el patrón. Además tenemos una brecha en  train-test con un ligero sobreajuste y el problema principal es la falta de capacidad explicativa. Al no poder explicar bien porqué la variable objetivo (global_sales) cambia en el modo que lo hace con las variables dadas. Y no podemos incluir las otras variables de _sales ya que crearian leakage con mucha fuga de información.
-Una regresion lineal simple con pocas variables no captura bien la dinamica real de ventas globales.
+Lo que pasa es que el modelo se queda corto (underfitting): incluso en train el R² es bajo, y en test también.  
+Además no usamos las otras `_sales` porque eso provocaría leakage (sería casi darle la respuesta al modelo).
 
-Variables mas influyentes (por magnitud de coeficiente): dummies de plataforma, especialmente `GB`, `NES`, `PS4`, `XOne`, `WiiU` y en el caso de los Generos `Aventura` y `Estrategia`
+Variables más influyentes (por coeficientes): sobre todo plataformas (`GB`, `NES`, `PS4`, `XOne`, `WiiU`) y en géneros destacan `Adventure` y `Strategy`.
 
 ---
 
-## Ejercicio 3 - Regresion Lineal Multiple en NumPy
+## Ejercicio 3 — Regresión Lineal Múltiple en NumPy
+
+Descripción y análisis:
+En este ejercicio armamos una regresión lineal "a mano" con NumPy, sin apoyarnos en scikit-learn ni en fórmulas predefinidas. La idea era entender qué pasa por dentro: calcular coeficientes, predecir y evaluar métricas.
+
+---
+
+**Pregunta 3.1** — Explica en tus propias palabras qué hace la fórmula β = (XᵀX)⁻¹ Xᵀy y por qué es necesario añadir una columna de unos a la matriz X.
+
+Esa formula busca los coeficientes que mejor encajan con los datos, intentando que el error total sea lo mas pequeño posible.
+
+Y la columna de unos se mete para que exista el intercepto β₀.
+Si no la pones, obligas al modelo a pasar por cero si o si, y eso normalmente te empeora el ajuste.
+
+---
+
+**Pregunta 3.2** — Copia aquí los cuatro coeficientes ajustados por tu función y compáralos con los valores de referencia del enunciado.
+
+| Parámetro | Valor real | Valor ajustado |
+|-----------|-----------:|---------------:|
+| β₀        | 5.0        | 4.864995       |
+| β₁        | 2.0        | 2.063618       |
+| β₂        | -1.0       | -1.117038      |
+| β₃        | 0.5        | 0.438517       |
+
+Quedaron bastante cerca, asi que la implementacion esta bien.
+
+---
+
+**Pregunta 3.3** — ¿Qué valores de MAE, RMSE y R² has obtenido? ¿Se aproximan a los de referencia?
+
+- MAE = 1.166462
+- RMSE = 1.461243
+- R² = 0.689672
+
+MAE y RMSE sí quedan cerca de la referencia. El R² queda algo por debajo del valor orientativo del enunciado, pero el ajuste sigue siendo coherente con un modelo lineal con ruido.
+
+---
+
+**Pregunta 3.4** — Compara los resultados con la regresión logística anterior para tu dataset y comprueba si el resultado es parecido. Explica qué ha sucedido.
+
+No, no sale parecido: en el Ejercicio 3 el resultado es bastante mejor que en el 2.
+
+¿Que cambia?
+1. En el 3 los datos están generados para tener una relación lineal clara.
+2. En el 2 son datos reales de mercado (mucho más desordenados, con ruido y factores no observados) y además no usamos columnas que provocarían leakage.
+3. Por eso en el 2 el modelo explica poquito y en el 3 le va bastante mejor.
+
+---
+
+## Ejercicio 4 — Series Temporales
+
+Descripción y análisis:
+Se ejecutó el flujo completo: serie original, descomposición, ACF/PACF, histograma de residuo y tests.
+
+---
+
+**Pregunta 4.1** — ¿La serie presenta tendencia? Descríbela brevemente (tipo, dirección, magnitud aproximada).
+
+Si, se ve una tendencia creciente bastante clara.
+
+A ojo con los valores de la descomposicion:
+- arranca cerca de ~64.14 (en la parte válida de tendencia)
+- termina cerca de ~155.25
+- sube aprox. ~91.10 en 6 años
+
+---
+
+**Pregunta 4.2** — ¿Hay estacionalidad? Indica el periodo aproximado en días y la amplitud del patrón estacional.
+
+Si, hay estacionalidad anual.
+
+- periodo: ~365 dias
+- amplitud aprox.: ~18.40
+- pico a pico aprox.: ~36.80
+
+---
+
+**Pregunta 4.3** — ¿Se aprecian ciclos de largo plazo en la serie? ¿Cómo los diferencias de la tendencia?
+
+Si, se notan ciclos de largo plazo.
+
+Para mi, la forma simple de diferenciarlo:
+Los ciclos presentan subidas y bajadas alrededor de la tendencia. La grafica muestra una subida y una bajada que no llega hasta su punto minimo (ciclos).
+Por esto la Tendencia es a aumentar ya que se acumulan los aumentos de los ciclos en la tendencia anual.
+
+---
+
+**Pregunta 4.4** — ¿El residuo se ajusta a un ruido ideal? Indica la media, la desviación típica y el resultado del test de normalidad (p-value) para justificar tu respuesta.
+
+Resultados del residuo:
+- media = 0.127078
+- desviación típica = 3.222043
+- p-value Jarque-Bera = 0.576561
+- p-value ADF = 0.000000
+
+Interpretación rápida:
+Se comporta bastante parecido a ruido ideal: media cercana a 0, normalidad no rechazada (JB) y estacionariedad clara (ADF).
+
+---
+
+*Fin del documento de respuestas*

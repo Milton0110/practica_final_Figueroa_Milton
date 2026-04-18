@@ -1,0 +1,5 @@
+Regresion Lineal Multiple - Metricas de evaluacion
+==================================================
+  MAE  : 1.166462
+  RMSE : 1.461243
+  R2   : 0.689672

@@ -1,0 +1,14 @@
+Analisis del residuo de la serie temporal
+============================================================
+Media: 0.127078
+Desviacion tipica: 3.222043
+Asimetria: -0.050917
+Curtosis (exceso): -0.061028
+Jarque-Bera stat: 1.101349
+Jarque-Bera p-value: 0.576561
+ADF stat: -39.916048
+ADF p-value: 0.000000
+
+Interpretacion automatica:
+- Normalidad: no se rechaza (alpha=0.05)
+- Estacionariedad (ADF): se rechaza raiz unitaria (alpha=0.05)

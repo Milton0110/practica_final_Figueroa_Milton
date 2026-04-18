@@ -2,17 +2,17 @@ Resumen estructural del dataset
 ============================================================
 Filas: 16598
 Columnas: 11
-Tamano en memoria: 5.25 MB
+Tamano en memoria: 4.74 MB
 Variables numericas: 7
 Variables categoricas: 4
 
 Dtypes por columna:
 - rank: int64
-- name: object
-- platform: object
+- name: str
+- platform: str
 - year: float64
-- genre: object
-- publisher: object
+- genre: str
+- publisher: str
 - na_sales: float64
 - eu_sales: float64
 - jp_sales: float64
