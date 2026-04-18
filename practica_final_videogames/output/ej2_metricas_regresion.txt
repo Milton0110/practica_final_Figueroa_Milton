@@ -1,0 +1,15 @@
+Regresion Lineal - Metricas
+============================================================
+Dataset: video_games_sales.csv
+Target: global_sales
+Features usadas: year, platform, genre
+
+Train:
+  MAE  = 0.546562
+  RMSE = 1.357837
+  R2   = 0.064892
+
+Test:
+  MAE  = 0.590574
+  RMSE = 2.032835
+  R2   = 0.016410

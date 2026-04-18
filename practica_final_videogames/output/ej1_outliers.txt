@@ -1,0 +1,18 @@
+Deteccion y tratamiento de outliers (metodo IQR)
+============================================================
+Justificacion metodo: IQR es robusto con distribuciones sesgadas y valores extremos, algo esperable en variables de ventas.
+Tratamiento aplicado: capado (winsorizacion) a limites IQR; no elimina filas.
+
+- rank: outliers=0 (0.00%), limites=[-8296.5000, 24897.5000] -> solo diagnostico (sin capado)
+- year: outliers=305 (1.87%), limites=[1992.5000, 2020.5000] -> solo diagnostico (sin capado)
+- na_sales: outliers=1681 (10.13%), limites=[-0.3600, 0.6000] -> capado IQR aplicado (1681 valores)
+- eu_sales: outliers=2081 (12.54%), limites=[-0.1650, 0.2750] -> capado IQR aplicado (2081 valores)
+- jp_sales: outliers=2425 (14.61%), limites=[-0.0600, 0.1000] -> capado IQR aplicado (2425 valores)
+- other_sales: outliers=1665 (10.03%), limites=[-0.0600, 0.1000] -> capado IQR aplicado (1665 valores)
+- global_sales: outliers=1893 (11.40%), limites=[-0.5550, 1.0850] -> capado IQR aplicado (1893 valores)
+
+Total de valores capados: 9745
+
+Posible multicolinealidad (|r| > 0.9):
+- na_sales vs global_sales: r=0.9410
+- eu_sales vs global_sales: r=0.9028

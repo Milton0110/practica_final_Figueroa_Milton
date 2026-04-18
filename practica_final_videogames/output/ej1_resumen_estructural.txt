@@ -1,0 +1,33 @@
+Resumen estructural del dataset
+============================================================
+Filas: 16598
+Columnas: 11
+Tamano en memoria: 5.25 MB
+Variables numericas: 7
+Variables categoricas: 4
+
+Dtypes por columna:
+- rank: int64
+- name: object
+- platform: object
+- year: float64
+- genre: object
+- publisher: object
+- na_sales: float64
+- eu_sales: float64
+- jp_sales: float64
+- other_sales: float64
+- global_sales: float64
+
+Porcentaje de nulos por columna:
+- year: 1.63%
+- publisher: 0.35%
+- rank: 0.00%
+- platform: 0.00%
+- name: 0.00%
+- genre: 0.00%
+- na_sales: 0.00%
+- eu_sales: 0.00%
+- jp_sales: 0.00%
+- other_sales: 0.00%
+- global_sales: 0.00%

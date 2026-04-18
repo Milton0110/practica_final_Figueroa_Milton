@@ -1,0 +1,5 @@
+Top-3 correlaciones (abs) con global_sales
+============================================================
+- na_sales: 0.9410
+- eu_sales: 0.9028
+- other_sales: 0.7483
