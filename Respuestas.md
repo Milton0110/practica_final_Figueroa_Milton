@@ -168,7 +168,7 @@ A ojo con los valores de la descomposicion:
 
 Si, hay estacionalidad anual.
 
-- periodo: ~365 dias
+- periodo: ~365 dias (al hacer la creacion 365.25, los calculos los hago con 365)
 - amplitud aprox.: ~18.40
 - pico a pico aprox.: ~36.80
 
