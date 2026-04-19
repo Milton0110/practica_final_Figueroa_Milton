@@ -199,47 +199,99 @@ def guardar_metricas(mae, rmse, r2):
         f.write(f"  R2   : {r2:.6f}\n")
 
 
+# =============================================================================
+# MAIN — NO MODIFIQUES ESTE BLOQUE (es la prueba de referencia del profesor)
+# =============================================================================
+
 if __name__ == "__main__":
-    # Datos sinteticos con semilla fija.
+
+    # -------------------------------------------------------------------------
+    # Datos sintéticos con semilla fija para reproducibilidad
+    # -------------------------------------------------------------------------
     SEMILLA = 42
     rng = np.random.default_rng(SEMILLA)
 
     n_muestras = 200
     n_features = 3
 
+    # Generamos features aleatorias
     X = rng.standard_normal((n_muestras, n_features))
 
+    # Coeficientes "reales" conocidos: β₀=5, β₁=2, β₂=-1, β₃=0.5
     coefs_reales = np.array([5.0, 2.0, -1.0, 0.5])
 
+    # Variable objetivo con ruido gaussiano (σ=1.5)
     ruido = rng.normal(0, 1.5, n_muestras)
     y = coefs_reales[0] + X @ coefs_reales[1:] + ruido
 
-    # Split 80/20 sin mezclar.
+    # -------------------------------------------------------------------------
+    # Split Train / Test (80% / 20%) — sin mezclar aleatoriamente
+    # -------------------------------------------------------------------------
     corte = int(0.8 * n_muestras)
     X_train, X_test = X[:corte], X[corte:]
     y_train, y_test = y[:corte], y[corte:]
 
+    # -------------------------------------------------------------------------
+    # Ajuste del modelo
+    # -------------------------------------------------------------------------
     coefs, y_pred = regresion_lineal_multiple(X_train, y_train, X_test)
 
-    mae = calcular_mae(y_test, y_pred)
+    # -------------------------------------------------------------------------
+    # Métricas
+    # -------------------------------------------------------------------------
+    mae  = calcular_mae(y_test, y_pred)
     rmse = calcular_rmse(y_test, y_pred)
-    r2 = calcular_r2(y_test, y_pred)
+    r2   = calcular_r2(y_test, y_pred)
 
+    # -------------------------------------------------------------------------
+    # Mostrar resultados en consola
+    # -------------------------------------------------------------------------
     print("=" * 50)
-    print("RESULTADOS - Regresion Lineal Multiple (NumPy)")
+    print("RESULTADOS — Regresión Lineal Múltiple (NumPy)")
     print("=" * 50)
     print(f"\nCoeficientes reales:   {coefs_reales}")
     print(f"Coeficientes ajustados: {coefs}")
-    print(f"\nMetricas sobre test set:")
+    print(f"\nMétricas sobre test set:")
     print(f"  MAE  = {mae:.4f}")
     print(f"  RMSE = {rmse:.4f}")
-    print(f"  R2   = {r2:.4f}")
+    print(f"  R²   = {r2:.4f}")
 
-    guardar_coeficientes(coefs, coefs_reales, n_features)
-    guardar_metricas(mae, rmse, r2)
+    # -------------------------------------------------------------------------
+    # RESULTADO DE REFERENCIA DEL PROFESOR
+    # Con SEMILLA=42, los resultados esperados aproximados son:
+    #   Coefs ajustados ≈ [5.0, 2.0, -1.0, 0.5]  (cercanos a los reales)
+    #   MAE  ≈ 1.20  (±0.20 según implementación)
+    #   RMSE ≈ 1.50  (±0.20 según implementación)
+    #   R²   ≈ 0.80  (±0.05 según implementación)
+    # -------------------------------------------------------------------------
+
+    # -------------------------------------------------------------------------
+    # Guardar salidas
+    # -------------------------------------------------------------------------
+
+    # Fichero de coeficientes
+    with open("output/ej3_coeficientes.txt", "w", encoding="utf-8") as f:
+        f.write("Regresión Lineal Múltiple — Coeficientes ajustados\n")
+        f.write("=" * 50 + "\n")
+        nombres = ["Intercepto (β₀)"] + [f"β{i+1} (feature {i+1})" for i in range(n_features)]
+        for nombre, valor in zip(nombres, coefs):
+            f.write(f"  {nombre}: {valor:.6f}\n")
+        f.write("\nCoeficientes reales de referencia:\n")
+        for nombre, valor in zip(nombres, coefs_reales):
+            f.write(f"  {nombre}: {valor:.6f}\n")
+
+    # Fichero de métricas
+    with open("output/ej3_metricas.txt", "w", encoding="utf-8") as f:
+        f.write("Regresión Lineal Múltiple — Métricas de evaluación\n")
+        f.write("=" * 50 + "\n")
+        f.write(f"  MAE  : {mae:.6f}\n")
+        f.write(f"  RMSE : {rmse:.6f}\n")
+        f.write(f"  R²   : {r2:.6f}\n")
+
+    # Gráfico
     graficar_real_vs_predicho(y_test, y_pred)
 
     print("\nSalidas guardadas en la carpeta output/")
-    print("  -> output/ej3_coeficientes.txt")
-    print("  -> output/ej3_metricas.txt")
-    print("  -> output/ej3_predicciones.png")
+    print("  → output/ej3_coeficientes.txt")
+    print("  → output/ej3_metricas.txt")
+    print("  → output/ej3_predicciones.png")
