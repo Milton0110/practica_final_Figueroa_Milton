@@ -1,4 +1,4 @@
-﻿# Respuestas — Práctica Final: Análisis y Modelado de Datos
+# Respuestas — Práctica Final: Análisis y Modelado de Datos
 
 > Documento combinado entre la plantilla del ejercicio y mis respuestas.
 
@@ -78,9 +78,16 @@ Hice un pipeline de `LinearRegression` con:
 
 Para evitar fuga de información usé como features: `year`, `platform`, `genre`.
 
+¿Por qué justo estas tres y no otras? Porque son las únicas columnas "de contexto" del juego que no dependen directamente del resultado comercial que quiero predecir. Si metiera `na_sales`, `eu_sales`, etc., básicamente le estaría dando al modelo trozos de la respuesta (eso es el leakage del que hablo más abajo). `publisher` la descarté por el mismo motivo que en el Ejercicio 1 (Pregunta 1.4): tiene muchísima cardinalidad y con one-hot eso se traduce en cientos de columnas dispersas, la mayoría con muy pocos casos, lo que hace el modelo inestable y difícil de interpretar. `rank` tampoco tiene sentido como feature porque es casi una copia ordenada del target. Así que me quedé con `year`, `platform` y `genre` porque son variables que existen *antes* de saber cuánto va a vender el juego, y eso es justo lo que hace que la predicción sea honesta.
+
 ---
 
 **Pregunta 2.1** — Indica los valores de MAE, RMSE y R² de la regresión lineal sobre el test set. ¿El modelo funciona bien? ¿Por qué?
+
+Resultados en train:
+- MAE = 0.546562
+- RMSE = 1.357837
+- R² = 0.064892
 
 Resultados en test:
 - MAE = 0.590574
@@ -89,10 +96,13 @@ Resultados en test:
 
 Conclusión corta: no funciona muy bien para predecir.
 
-Lo que pasa es que el modelo se queda corto (underfitting): incluso en train el R² es bajo, y en test también.  
+Lo que pasa es que el modelo se queda corto (underfitting): incluso en train el R² es bajo (0.0649), y en test cae todavía más (0.0164). Que train y test estén los dos mal, y parecidos entre sí, es la pista clave: no es un problema de que el modelo memorice y luego no generalice (eso sería overfitting, train alto y test bajo), sino que directamente `year`, `platform` y `genre` no tienen suficiente información por sí solas para explicar cuánto vende un juego. Y tiene sentido si lo piensas: dos juegos del mismo año, misma plataforma y mismo género pueden vender cantidades completamente distintas por motivos que aquí no estamos capturando (marketing, si es una saga conocida, calidad del juego, competencia esa temporada...).
+
 Además no usamos las otras `_sales` porque eso provocaría leakage (sería casi darle la respuesta al modelo).
 
-Variables más influyentes (por coeficientes): sobre todo plataformas (`GB`, `NES`, `PS4`, `XOne`, `WiiU`) y en géneros destacan `Adventure` y `Strategy`.
+En la práctica, ¿qué implica un R² de 0.016 en test? Que el modelo apenas explica un 1.6% de la variación en ventas globales, así que no serviría para nada operativo tipo "estimar cuánto va a vender este juego". Como mucho, es útil para ver *tendencias* muy generales (qué plataformas o géneros tienden a asociarse con más o menos ventas en promedio), pero no para hacer una predicción fiable de un juego concreto. Para que el modelo mejorase de verdad, necesitaría variables que sí tengan relación causal más fuerte con las ventas: presupuesto de marketing, si pertenece a una franquicia, puntuación de crítica/usuarios (aunque esa ya casi sería otra fuga, porque suele venir después del lanzamiento), etc.
+
+Variables más influyentes (por coeficientes): sobre todo plataformas (`GB`, `NES`, `PS4`, `XOne`, `WiiU`) y en géneros destacan `Adventure` y `Strategy`. Esto hay que leerlo con cuidado: que el coeficiente sea grande no significa que esa plataforma "cause" más ventas en general, solo que dentro de esta muestra concreta esas categorías se asocian con desviaciones más grandes respecto a la media — con un R² tan bajo, no me fiaría de usar estos coeficientes como conclusión de negocio.
 
 ---
 
@@ -106,6 +116,10 @@ En este ejercicio armamos una regresión lineal "a mano" con NumPy, sin apoyarno
 **Pregunta 3.1** — Explica en tus propias palabras qué hace la fórmula β = (XᵀX)⁻¹ Xᵀy y por qué es necesario añadir una columna de unos a la matriz X.
 
 Esa formula busca los coeficientes que mejor encajan con los datos, intentando que el error total sea lo mas pequeño posible.
+
+Un poco más en detalle: "error total lo más pequeño posible" en OLS significa concretamente minimizar la suma de los residuos al cuadrado (por eso "mínimos cuadrados"), no la suma de errores absolutos ni ningún otro criterio. Geométricamente, lo que hace β = (XᵀX)⁻¹Xᵀy es proyectar el vector y sobre el subespacio que generan las columnas de X: básicamente busca el punto dentro de ese subespacio que está más cerca de y, y esa distancia mínima es el residuo. Que se pueda resolver con esa fórmula cerrada (sin iterar como en gradient descent) depende de que XᵀX sea invertible, es decir, de que no haya columnas de X que sean combinación lineal exacta de otras (ahí es donde entraría la multicolinealidad que miramos en el Ejercicio 1).
+
+También vale la pena tener en mente qué asume esta fórmula para que el resultado sea válido: que la relación entre X e y es lineal, que los residuos tienen varianza más o menos constante (homocedasticidad) y que no están correlacionados entre sí. No lo comprobamos a fondo aquí porque los datos son sintéticos y generados justo para cumplir eso, pero en el Ejercicio 2, con datos reales, esas asunciones son mucho más cuestionables — otra pista de por qué ese modelo ajusta peor.
 
 Y la columna de unos se mete para que exista el intercepto β₀.
 Si no la pones, obligas al modelo a pasar por cero si o si, y eso normalmente te empeora el ajuste.
